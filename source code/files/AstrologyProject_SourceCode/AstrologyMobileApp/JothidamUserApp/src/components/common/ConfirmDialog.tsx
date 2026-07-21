@@ -112,39 +112,49 @@ export default function ConfirmDialog({
               <StyledTouchable
                 onPress={onCancel}
                 activeOpacity={0.8}
-                className={`flex-1 rounded-xl items-center justify-center border ${isDanger ? 'border-light-text/25' : 'border-gold/40'}`}
+                className={`flex-1 rounded-xl items-center justify-center border-2 ${isDanger ? 'border-light-text/40' : 'border-gold'}`}
                 style={{ minHeight: 54, paddingVertical: 8 }}
               >
                 <StyledText
-                  className={`font-sans font-bold text-sm ${isDanger ? 'text-light-text/70' : 'text-gold'}`}
+                  className={`font-sans font-bold text-sm ${isDanger ? 'text-light-text' : 'text-gold'}`}
                   numberOfLines={1}
                 >
                   {cancelEn}
                 </StyledText>
                 {!!cancelTa && (
                   <StyledText
-                    className={`font-sans text-xs mt-0.5 ${isDanger ? 'text-light-text/50' : 'text-gold/70'}`}
+                    className={`font-sans text-xs mt-0.5 ${isDanger ? 'text-light-text/70' : 'text-gold/80'}`}
                     numberOfLines={1}
                   >
                     {cancelTa}
                   </StyledText>
                 )}
               </StyledTouchable>
+              {/* Gold variant (Exit App): outlined red, not filled — matches
+                  Cancel's outlined style but in a clearly distinct color, so
+                  the two actions are easy to tell apart without relying on a
+                  filled background (a previous version set backgroundColor:
+                  undefined here to "clear" it for this branch, which instead
+                  overrode and cancelled bg-gold's className color entirely,
+                  leaving this button with no visible fill or border contrast
+                  at all). Danger variant (Logout) keeps its solid red fill. */}
               <StyledTouchable
                 onPress={onConfirm}
                 activeOpacity={0.8}
-                className={`flex-1 rounded-xl items-center justify-center ${isDanger ? '' : 'bg-gold'}`}
-                style={{ minHeight: 54, paddingVertical: 8, backgroundColor: isDanger ? '#FF6B6B' : undefined }}
+                className={`flex-1 rounded-xl items-center justify-center border-2 ${
+                  isDanger ? 'bg-[#FF6B6B] border-[#FF6B6B]' : 'border-[#FF6B6B]'
+                }`}
+                style={{ minHeight: 54, paddingVertical: 8 }}
               >
                 <StyledText
-                  className={`font-sans font-bold text-sm ${isDanger ? 'text-white' : 'text-dark'}`}
+                  className={`font-sans font-bold text-sm ${isDanger ? 'text-white' : 'text-[#FF6B6B]'}`}
                   numberOfLines={1}
                 >
                   {confirmEn}
                 </StyledText>
                 {!!confirmTa && (
                   <StyledText
-                    className={`font-sans text-xs mt-0.5 ${isDanger ? 'text-white/70' : 'text-dark/70'}`}
+                    className={`font-sans text-xs mt-0.5 ${isDanger ? 'text-white/70' : 'text-[#FF6B6B]/80'}`}
                     numberOfLines={1}
                   >
                     {confirmTa}
