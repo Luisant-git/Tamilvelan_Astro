@@ -1,0 +1,148 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Tamil:wght@400;500;600;700&family=Noto+Serif+Tamil:wght@400;600;700&display=swap');
+
+:root {
+  --color-bg: #0D0620;
+  --color-surface: #1A0E3A;
+  --color-card: #251450;
+  --color-gold: #FFD700;
+  --color-saffron: #FF8C00;
+  --color-text: #F5F0FF;
+  --color-muted: #A89BC8;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+main > div:first-child { padding-top: 0.5rem !important; }
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: 'Noto Sans Tamil', 'Latha', sans-serif;
+  min-height: 100vh;
+}
+
+h1, h2, h3 {
+  font-family: 'Noto Serif Tamil', serif;
+}
+
+@layer components {
+  .btn-gold {
+    @apply bg-yellow-400 text-yellow-900 font-semibold px-6 py-3 rounded-xl hover:bg-yellow-300 transition-all duration-200 cursor-pointer;
+  }
+  .btn-outline {
+    @apply border border-yellow-400 text-yellow-400 font-semibold px-6 py-3 rounded-xl hover:bg-yellow-400 hover:text-yellow-900 transition-all duration-200 cursor-pointer;
+  }
+  .card {
+    @apply bg-spiritual-800 border border-purple-800 rounded-2xl p-6;
+  }
+  .input-field {
+    @apply w-full bg-spiritual-700 border border-purple-700 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-yellow-400 placeholder-purple-400 font-tamil;
+  }
+  .section-title {
+    @apply text-2xl font-bold text-yellow-400 mb-2;
+  }
+  .gold-divider {
+    @apply border-t border-yellow-800 my-6;
+  }
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--color-bg); }
+::-webkit-scrollbar-thumb { background: #4B2A8F; border-radius: 3px; }
+
+.kolam-bg {
+  background-image: radial-gradient(circle at 25% 25%, rgba(255,215,0,0.03) 0%, transparent 50%),
+                    radial-gradient(circle at 75% 75%, rgba(255,140,0,0.03) 0%, transparent 50%);
+}
+
+/* === Logo animations === */
+@keyframes logo-breathe {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 0 rgba(255,215,0,0)); }
+  50%      { transform: scale(1.04); filter: drop-shadow(0 0 8px rgba(255,215,0,0.55)); }
+}
+@keyframes flame-flicker {
+  0%, 100% { transform: scaleY(1) scaleX(1); opacity: 1; }
+  25%      { transform: scaleY(1.08) scaleX(0.96); opacity: 0.92; }
+  50%      { transform: scaleY(0.95) scaleX(1.04); opacity: 1; }
+  75%      { transform: scaleY(1.05) scaleX(0.98); opacity: 0.96; }
+}
+@keyframes vel-shine {
+  0%   { transform: translateX(-20px) skewX(-20deg); opacity: 0; }
+  20%  { opacity: 1; }
+  80%  { opacity: 1; }
+  100% { transform: translateX(130px) skewX(-20deg); opacity: 0; }
+}
+@keyframes vel-spark {
+  0%, 100% { transform: scale(1); opacity: 0.5; }
+  50%      { transform: scale(1.6); opacity: 1; }
+}
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes quote-shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.001s !important; transition-duration: 0.001s !important; }
+}
+
+/* === Responsive utilities === */
+
+/* Form row: 2-col on desktop (label | input), stacks on mobile. */
+.field-row {
+  display: grid;
+  grid-template-columns: var(--label-w, 180px) 1fr;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+@media (max-width: 640px) {
+  .field-row {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+    gap: 4px;
+    margin-bottom: 12px;
+  }
+}
+.field-row-narrow { --label-w: 130px; }
+.field-row-tight  { --label-w: 160px; }
+
+/* List row with icon | content | aside. Aside drops to a new line on narrow. */
+.row-icon-content-aside {
+  display: grid;
+  grid-template-columns: var(--icon-w, 70px) 1fr auto;
+  align-items: center;
+  gap: 12px;
+}
+@media (max-width: 480px) {
+  .row-icon-content-aside {
+    grid-template-columns: var(--icon-w, 56px) 1fr;
+    gap: 8px;
+  }
+  .row-icon-content-aside > :nth-child(3) {
+    grid-column: 1 / -1;
+    text-align: right;
+    padding-top: 4px;
+  }
+}
+
+/* Fluid page heading. Avoids 28px crammed onto small viewports. */
+.page-h1 {
+  font-family: 'Noto Serif Tamil', serif;
+  color: #FFD700;
+  font-size: clamp(20px, 4.8vw, 28px);
+  line-height: 1.2;
+  margin: 0 0 4px;
+}
+.page-h1-sm { font-size: clamp(18px, 4vw, 24px); }
+
+/* Ensure inputs/selects don't overflow their grid cell on mobile */
+.field-row input,
+.field-row select,
+.field-row textarea { min-width: 0; }
