@@ -21,9 +21,13 @@ const PLANET_SHORT_TAMIL: Record<string, string> = {
   Jupiter: 'குரு', Venus: 'சுக்', Saturn: 'சனி', Rahu: 'ராகு', Ketu: 'கேது',
 };
 
-type PlanetByRasi = Record<number, string[]>;
+export type PlanetByRasi = Record<number, string[]>;
 
-function groupByRasi(data: Record<string, { rasi: number }>): PlanetByRasi {
+// Exported so PoruthamScreen's Marriage Match result can draw each side's own
+// single Rasi Chakkaram (bride/groom individually) using the identical
+// chart-drawing logic, instead of duplicating it — mirrors the website's
+// porutham/page.tsx, which reuses its own MiniRasiChart the same way for both.
+export function groupByRasi(data: Record<string, { rasi: number }>): PlanetByRasi {
   const map: PlanetByRasi = {};
   Object.entries(data).forEach(([name, d]) => {
     if (!map[d.rasi]) map[d.rasi] = [];
@@ -39,7 +43,7 @@ const BASE_SIZE = BASE_CELL * COLS;
 // now that it's full-width instead of squeezed into half a row.
 const MAX_SIZE = 380;
 
-function ChartGrid({
+export function ChartGrid({
   title,
   centerLabel,
   lagnaRasi,
