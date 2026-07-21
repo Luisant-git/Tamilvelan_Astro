@@ -26,6 +26,8 @@ import { RASI_TAMIL, type PoruthamItem, type MatchDosham } from '../../utils/por
 import type { SideChart, MarriageMatchResponse } from '../../types/marriage.types';
 import { marriageApi } from '../../services/marriage.api';
 import { horoscopeApi } from '../../services/horoscope.api';
+import { ChartGrid, groupByRasi } from './jathagam/RasiNavamsaCharts';
+import Dropdown from '../../components/common/Dropdown';
 import { getErrorMessage } from '../../services/client';
 import { notifyAlert } from '../../utils/alert';
 import { useMutation } from '../../hooks';
@@ -61,6 +63,15 @@ type Result = MarriageMatchResponse;
 
 // ============ Constants ============
 const CURRENT_YEAR = new Date().getFullYear();
+
+const pad2 = (n: number) => String(n).padStart(2, '0');
+const MONTH_OPTIONS = Array.from({ length: 12 }, (_, i) => pad2(i + 1));
+const DAY_OPTIONS = Array.from({ length: 31 }, (_, i) => pad2(i + 1));
+// Descending so the most likely birth years (recent) surface first instead
+// of the dropdown opening 100 years back.
+const YEAR_OPTIONS = Array.from({ length: 100 }, (_, i) => String(CURRENT_YEAR - i));
+const HOUR_OPTIONS = Array.from({ length: 12 }, (_, i) => pad2(i + 1));
+const MINUTE_OPTIONS = Array.from({ length: 60 }, (_, i) => pad2(i));
 
 const PLANET_SHORT_TAMIL: Record<string, string> = {
   Sun: 'சூரி', Moon: 'சந்', Mars: 'செவ்', Mercury: 'புதன்',
@@ -282,31 +293,13 @@ function PartyCard({
           </StyledView>
           <StyledView className="flex-row gap-2">
             <StyledView className="flex-1">
-              <StyledInput
-                className="bg-dark border border-gold/30 rounded-xl px-3 py-3 text-light-text text-center"
-                value={side.month}
-                onChangeText={(v) => setField('month', v)}
-                keyboardType="number-pad"
-                maxLength={2}
-              />
+              <Dropdown value={side.month} options={MONTH_OPTIONS} onSelect={(v) => setField('month', v)} title="மாதம் / Month" />
             </StyledView>
             <StyledView className="flex-1">
-              <StyledInput
-                className="bg-dark border border-gold/30 rounded-xl px-3 py-3 text-light-text text-center"
-                value={side.day}
-                onChangeText={(v) => setField('day', v)}
-                keyboardType="number-pad"
-                maxLength={2}
-              />
+              <Dropdown value={side.day} options={DAY_OPTIONS} onSelect={(v) => setField('day', v)} title="நாள் / Day" />
             </StyledView>
             <StyledView className="flex-1">
-              <StyledInput
-                className="bg-dark border border-gold/30 rounded-xl px-3 py-3 text-light-text text-center"
-                value={side.year}
-                onChangeText={(v) => setField('year', v)}
-                keyboardType="number-pad"
-                maxLength={4}
-              />
+              <Dropdown value={side.year} options={YEAR_OPTIONS} onSelect={(v) => setField('year', v)} title="ஆண்டு / Year" />
             </StyledView>
           </StyledView>
         </StyledView>
@@ -319,22 +312,10 @@ function PartyCard({
           </StyledView>
           <StyledView className="flex-row gap-2">
             <StyledView className="flex-1">
-              <StyledInput
-                className="bg-dark border border-gold/30 rounded-xl px-3 py-3 text-light-text text-center"
-                value={side.hour}
-                onChangeText={(v) => setField('hour', v)}
-                keyboardType="number-pad"
-                maxLength={2}
-              />
+              <Dropdown value={side.hour} options={HOUR_OPTIONS} onSelect={(v) => setField('hour', v)} title="மணி / Hour" />
             </StyledView>
             <StyledView className="flex-1">
-              <StyledInput
-                className="bg-dark border border-gold/30 rounded-xl px-3 py-3 text-light-text text-center"
-                value={side.minute}
-                onChangeText={(v) => setField('minute', v)}
-                keyboardType="number-pad"
-                maxLength={2}
-              />
+              <Dropdown value={side.minute} options={MINUTE_OPTIONS} onSelect={(v) => setField('minute', v)} title="நிமிடம் / Minute" />
             </StyledView>
             <StyledView className="flex-1">
               <StyledView className="flex-row bg-dark border border-gold/30 rounded-xl overflow-hidden">
@@ -455,9 +436,9 @@ function SideBirthCard({ chart, accent, title }: { chart: SideChart; accent: str
       {rows.map(([k, v], i) => (
         <StyledView
           key={k}
-          className={`flex-row px-4 py-2 ${i % 2 === 0 ? 'bg-[#1A0E3A]' : 'bg-[#251450]'}`}
+          className={`flex-row items-center px-4 py-2 ${i % 2 === 0 ? 'bg-[#1A0E3A]' : 'bg-[#251450]'}`}
         >
-          <StyledText className="text-light-text/50 text-xs font-sans w-[40%]">{k}</StyledText>
+          <StyledText className="text-light-text/50 text-xs font-sans w-[38%]">{k}</StyledText>
           <StyledText className="text-gold text-xs font-sans flex-1">{v}</StyledText>
         </StyledView>
       ))}
@@ -679,16 +660,16 @@ function PoruthamScreenInner({ navigation }: any) {
                 <StyledText className="text-light-text/40 text-[10px] font-sans">
                   தசவித பொருத்தம் அடிப்படையில் கணிக்கப்பட்டது
                 </StyledText>
-                <StyledView className="mt-3">
+                <StyledView className="mt-3 items-center">
                   <StyledText
-                    className="text-5xl font-bold font-sans"
+                    className="text-5xl font-bold font-sans text-center"
                     style={{
                       color: result.percentage >= 75 ? '#4CAF50' : result.percentage >= 45 ? '#FFD700' : '#FF6B6B',
                     }}
                   >
                     {result.percentage}%
                   </StyledText>
-                  <StyledText className="text-gold text-sm font-sans">
+                  <StyledText className="text-gold text-sm font-sans text-center">
                     {result.totalScore} / {result.maxScore} புள்ளி
                   </StyledText>
                   <StyledText className="text-light-text/60 text-xs font-sans mt-2 text-center">
@@ -697,14 +678,34 @@ function PoruthamScreenInner({ navigation }: any) {
                 </StyledView>
               </StyledView>
 
-              {/* Birth Details */}
-              <StyledView className="flex-row flex-wrap gap-3">
-                <StyledView className="flex-1 min-w-[140px]">
-                  <SideBirthCard chart={result.bride} accent="#4B2A8F" title="பெண் பிறப்பு விவரங்கள்" />
-                </StyledView>
-                <StyledView className="flex-1 min-w-[140px]">
-                  <SideBirthCard chart={result.groom} accent="#7B1FA2" title="ஆண் பிறப்பு விவரங்கள்" />
-                </StyledView>
+              {/* Birth Details — stacked (Bride, then Groom) instead of side
+                  by side: two half-width cards on a narrow phone squeezed
+                  every label/value row into ~140px, wrapping birth-place
+                  and nakshatra text awkwardly. Full-width stacked cards give
+                  each row room to stay on one line. */}
+              <StyledView style={{ gap: 12 }} className="mb-3">
+                <SideBirthCard chart={result.bride} accent="#4B2A8F" title="பெண் பிறப்பு விவரங்கள்" />
+                <SideBirthCard chart={result.groom} accent="#7B1FA2" title="ஆண் பிறப்பு விவரங்கள்" />
+              </StyledView>
+
+              {/* Rasi Chakkaram — mirrors the website's porutham page, which
+                  draws each side's own Rasi chart (not Navamsa) from the same
+                  lagnaRasi/planets fields already present on result.bride and
+                  result.groom. Reuses RasiNavamsaCharts's ChartGrid/groupByRasi
+                  instead of a separate copy of the same SVG-drawing logic. */}
+              <StyledView style={{ gap: 16 }} className="mb-4">
+                <ChartGrid
+                  title="🌙 பெண் ராசி சக்கரம்"
+                  centerLabel="பெண் ராசி"
+                  lagnaRasi={result.bride.lagnaRasi}
+                  planetsByRasi={groupByRasi(result.bride.planets)}
+                />
+                <ChartGrid
+                  title="☀ ஆண் ராசி சக்கரம்"
+                  centerLabel="ஆண் ராசி"
+                  lagnaRasi={result.groom.lagnaRasi}
+                  planetsByRasi={groupByRasi(result.groom.planets)}
+                />
               </StyledView>
 
               {/* Porutham Table */}
