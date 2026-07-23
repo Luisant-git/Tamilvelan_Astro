@@ -1,7 +1,5 @@
 /** @type {import('next').NextConfig} */
 
-const PUBLIC_IP = '122.173.84.19';
-
 const securityHeaders = [
   { key: 'X-DNS-Prefetch-Control', value: 'on' },
   { key: 'X-Frame-Options', value: 'DENY' },
@@ -20,7 +18,11 @@ const securityHeaders = [
     key: 'Content-Security-Policy',
     value: [
       "default-src 'self'",
-      `connect-src 'self' https://vedastro.org https://api.prokerala.com`,
+      // Backend now lives at a different origin than the frontend (previously
+      // same-origin '/api', a single unified app) — the browser's fetch/XHR
+      // calls from src/lib/api.ts need the backend's origin(s) allow-listed
+      // here, or they'd be blocked by CSP even though CORS allows them.
+      `connect-src 'self' https://vedastro.org https://api.prokerala.com http://122.173.84.19:3000 http://localhost:3000`,
       "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob:",
@@ -32,15 +34,6 @@ const securityHeaders = [
 
 const nextConfig = {
   reactStrictMode: true,
-  experimental: {
-    serverActions: {
-      allowedOrigins: [
-        'localhost:3000',
-        `${PUBLIC_IP}:3000`,
-        PUBLIC_IP,
-      ]
-    }
-  },
   async headers() {
     return [
       {

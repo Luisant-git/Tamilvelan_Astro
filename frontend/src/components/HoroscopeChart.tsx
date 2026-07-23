@@ -1,6 +1,6 @@
 'use client';
 
-import { PLANET_SHORT_TAMIL } from '@/lib/astrology';
+import { PLANET_SHORT_TAMIL } from '@/lib/planetLabels';
 
 // South-Indian fixed grid (Mesham at top-left position 1, going clockwise)
 const GRID_TO_RASI: Array<number | null> = [

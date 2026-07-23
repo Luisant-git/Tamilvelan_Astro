@@ -1,6 +1,9 @@
 import axios, { AxiosRequestHeaders } from 'axios';
 
-const api = axios.create({ baseURL: '/api' });
+// NEXT_PUBLIC_API_URL is the backend's origin only (no /api suffix) —
+// frontend and backend are now separate processes/origins (previously the
+// same Next.js app served both, so a relative '/api' path worked).
+const api = axios.create({ baseURL: `${process.env.NEXT_PUBLIC_API_URL}/api` });
 
 api.interceptors.request.use(config => {
   if (typeof window !== 'undefined') {
