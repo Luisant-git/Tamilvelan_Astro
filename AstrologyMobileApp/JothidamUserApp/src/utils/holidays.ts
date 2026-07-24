@@ -1,4 +1,6 @@
 // Important days: National, Tamil Nadu, International, and Optional observances.
+// Mirrors frontend/src/lib/holidays.ts — kept in sync manually since the mobile
+// app and website are separate codebases.
 //
 // Two kinds of entries:
 // - FIXED_ANNUAL_DAYS: same month/day every year (most National/International/TN
@@ -110,12 +112,4 @@ export function holidaysForMonth(year: number, monthZeroBased: number): Holiday[
     .filter(v => v.isoDate.startsWith(prefix));
 
   return [...fixed, ...variable].sort((a, b) => a.isoDate.localeCompare(b.isoDate));
-}
-
-// Every fixed + variable-date entry for a whole year, flattened and sorted —
-// for callers that need to scan across a full year (e.g. "next holiday from date X").
-export function allHolidaysForYear(year: number): Holiday[] {
-  const all: Holiday[] = [];
-  for (let m = 0; m < 12; m++) all.push(...holidaysForMonth(year, m));
-  return all.sort((a, b) => a.isoDate.localeCompare(b.isoDate));
 }

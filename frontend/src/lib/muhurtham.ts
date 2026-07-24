@@ -2,7 +2,7 @@
 // Uses the same heuristic tithi/nakshatra formulas as /api/panchang/today so
 // behaviour is consistent across the app. Not ephemeris-accurate.
 
-import { HOLIDAYS_2026 } from './holidays';
+import { allHolidaysForYear, holidaysForMonth } from './holidays';
 
 export const NAKSHATRA = [
   'அஸ்வினி', 'பரணி', 'கார்த்திகை', 'ரோகிணி', 'மிருகசீரிடம்',
@@ -82,12 +82,12 @@ export type Slot = {
   isHoliday?: string;
 };
 
-function computeTithi(d: Date): { idx: number; name: string } {
+export function computeTithi(d: Date): { idx: number; name: string } {
   const idx = (d.getDate() - 1) % 15;
   return { idx, name: TITHI[idx] };
 }
 
-function computeNakshatra(d: Date): { idx: number; name: string } {
+export function computeNakshatra(d: Date): { idx: number; name: string } {
   const idx = (d.getDate() * 3 + d.getMonth()) % 27;
   return { idx, name: NAKSHATRA[idx] };
 }
@@ -96,8 +96,10 @@ function toISO(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-const HOLIDAY_BY_ISO: Record<string, string> = {};
-HOLIDAYS_2026.forEach(h => { HOLIDAY_BY_ISO[h.isoDate] = h.ta; });
+function holidayNameForIso(iso: string): string | undefined {
+  const [y, m] = iso.split('-').map(Number);
+  return holidaysForMonth(y, m - 1).find(h => h.isoDate === iso)?.ta;
+}
 
 export function findMuhurthams(opts: {
   purpose: Purpose;
@@ -143,7 +145,7 @@ export function findMuhurthams(opts: {
         nakshatra: nak.name,
         score,
         nallaNeram: NALLA_NERAM[weekday],
-        isHoliday: HOLIDAY_BY_ISO[toISO(cursor)]
+        isHoliday: holidayNameForIso(toISO(cursor))
       });
     }
 
@@ -152,6 +154,56 @@ export function findMuhurthams(opts: {
 
   slots.sort((a, b) => b.score - a.score || a.isoDate.localeCompare(b.isoDate));
   return slots.slice(0, limit);
+}
+
+export type GeneralMuhurthamDay = {
+  isoDate: string;
+  weekdayTa: string;
+  tithiName: string;
+  nakshatraName: string;
+  meta?: string;
+};
+
+// Purpose-agnostic "generally auspicious days" — same tithi/weekday scoring
+// findMuhurthams uses, minus the purpose-specific nakshatra/weekday bias
+// (there's no single "purpose" for a generic Important Days list). Used by
+// the Important Days screen's "சுபமுகூர்த்த தினங்கள்" section so it's
+// genuinely computed per month instead of a frozen reference list.
+export function findGeneralMuhurthams(opts: { startDate: Date; endDate: Date; limit?: number }): GeneralMuhurthamDay[] {
+  const limit = opts.limit ?? 6;
+  const cursor = new Date(opts.startDate);
+  cursor.setHours(0, 0, 0, 0);
+  const end = new Date(opts.endDate);
+  end.setHours(0, 0, 0, 0);
+
+  const scored: Array<GeneralMuhurthamDay & { score: number }> = [];
+  while (cursor <= end) {
+    const weekday = cursor.getDay();
+    const tithi = computeTithi(cursor);
+    if (!KARINAAL_TITHIS.has(tithi.idx)) {
+      const nak = computeNakshatra(cursor);
+      let score = 0;
+      // Reward auspicious tithis: panchami(4), sashti(5), dasami(9), dvadasi(11)
+      if ([4, 5, 9, 11].includes(tithi.idx)) score += 2;
+      // Prefer Mon/Wed/Thu/Fri
+      if ([1, 3, 4, 5].includes(weekday)) score += 1;
+      scored.push({
+        isoDate: toISO(cursor),
+        weekdayTa: TA_WEEKDAYS[weekday],
+        tithiName: tithi.name,
+        nakshatraName: nak.name,
+        score,
+        meta: score >= 3 ? '✦' : undefined
+      });
+    }
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  return scored
+    .sort((a, b) => b.score - a.score || a.isoDate.localeCompare(b.isoDate))
+    .slice(0, limit)
+    .sort((a, b) => a.isoDate.localeCompare(b.isoDate))
+    .map(({ score: _score, ...rest }) => rest);
 }
 
 export type KarinaalCategory = 'ashtami' | 'navami' | 'chaturdasi';
@@ -210,7 +262,7 @@ export function findKarinaalDays(opts: { startDate: Date; endDate: Date }): Kari
         tithiIdx: tithi.idx,
         tithiName: tithi.name,
         category: KARINAAL_CATEGORY_BY_TITHI[tithi.idx],
-        isHoliday: HOLIDAY_BY_ISO[iso]
+        isHoliday: holidayNameForIso(iso)
       });
     }
     cursor.setDate(cursor.getDate() + 1);
@@ -236,7 +288,9 @@ export function nextViratha(from: Date): { date: Date; name: string; daysAway: n
 
 export function nextHoliday(from: Date): { isoDate: string; ta: string; en: string; daysAway: number } | null {
   const fromIso = toISO(from);
-  const upcoming = HOLIDAYS_2026.find(h => h.isoDate >= fromIso);
+  const thisYear = from.getFullYear();
+  const upcoming = [...allHolidaysForYear(thisYear), ...allHolidaysForYear(thisYear + 1)]
+    .find(h => h.isoDate >= fromIso);
   if (!upcoming) return null;
   const [y, m, d] = upcoming.isoDate.split('-').map(Number);
   const target = new Date(y, m - 1, d);
