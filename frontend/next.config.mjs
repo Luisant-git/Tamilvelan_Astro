@@ -1,5 +1,10 @@
 /** @type {import('next').NextConfig} */
 
+// Same var that src/lib/api.ts uses for the actual API calls — reusing it here
+// means the CSP always matches wherever the backend really is, with nothing
+// to remember to edit by hand when that changes (e.g. moving to Render).
+const backendOrigin = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+
 const securityHeaders = [
   { key: 'X-DNS-Prefetch-Control', value: 'on' },
   { key: 'X-Frame-Options', value: 'DENY' },
@@ -22,7 +27,7 @@ const securityHeaders = [
       // same-origin '/api', a single unified app) — the browser's fetch/XHR
       // calls from src/lib/api.ts need the backend's origin(s) allow-listed
       // here, or they'd be blocked by CSP even though CORS allows them.
-      `connect-src 'self' https://vedastro.org https://api.prokerala.com http://122.173.84.19:3000 http://localhost:3000`,
+      `connect-src 'self' https://vedastro.org https://api.prokerala.com ${backendOrigin} http://localhost:3000`,
       "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob:",

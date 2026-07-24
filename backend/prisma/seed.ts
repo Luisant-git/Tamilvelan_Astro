@@ -5,7 +5,9 @@ const prisma = new PrismaClient();
 
 async function main() {
   const adminEmail = 'admin@jothidam.test';
-  const adminPassword = 'admin123';
+  // Overridable so a real deployment's seed run doesn't commit a known
+  // password to source — local dev keeps working unchanged if unset.
+  const adminPassword = process.env.ADMIN_SEED_PASSWORD || 'admin123';
   const adminHash = await bcrypt.hash(adminPassword, 12);
 
   await prisma.user.upsert({
