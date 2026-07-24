@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { RASI_NAMES_TAMIL } from '@/lib/astrology';
+import { RASI_NAMES_TAMIL } from '../../../../../lib/astrology';
 
 const PREDICTIONS = [
   'இன்று உங்களுக்கு அனுகூலமான நாள். புதிய திட்டங்களை தொடங்கலாம்.',

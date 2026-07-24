@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { requireAuth } from '@/lib/auth';
+import { prisma } from '../../../../lib/prisma';
+import { requireAuth } from '../../../../lib/auth';
 import {
   computeFullChart,
   computeDasavithaPorutham,
   computeMatchDoshams
-} from '@/lib/astrology';
+} from '../../../../lib/astrology';
 
 export async function POST(req: NextRequest) {
   const guard = requireAuth(req);

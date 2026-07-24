@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { requireAuth } from '@/lib/auth';
-import { computeFullChart } from '@/lib/astrology';
+import { prisma } from '../../../../lib/prisma';
+import { requireAuth } from '../../../../lib/auth';
+import { computeFullChart } from '../../../../lib/astrology';
 
 export async function POST(req: NextRequest) {
   const guard = requireAuth(req);

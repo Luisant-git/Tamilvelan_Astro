@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { signToken, verifyOtp } from '@/lib/auth';
+import { prisma } from '../../../../lib/prisma';
+import { signToken, verifyOtp } from '../../../../lib/auth';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MOBILE_RE = /^[6-9]\d{9}$/;
