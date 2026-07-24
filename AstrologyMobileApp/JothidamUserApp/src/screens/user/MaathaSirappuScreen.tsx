@@ -12,6 +12,8 @@ import { StatusBar } from 'expo-status-bar';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import BackButton from '../../components/common/BackButton';
+import MonthYearPicker from '../../components/common/MonthYearPicker';
+import { holidaysForMonth, type Holiday } from '../../utils/holidays';
 
 const StyledView = styled(View);
 const StyledText = styled(Text);
@@ -65,13 +67,6 @@ interface Panchang {
   gowriNeram: { morning: string; evening: string };
 }
 
-interface Holiday {
-  isoDate: string;
-  ta: string;
-  en: string;
-  kind: 'national' | 'tamilnadu' | 'optional';
-}
-
 // ============ Helper Functions ============
 function toISO(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -108,24 +103,6 @@ function getTamilMonthRange(_year: number, _month: number): string {
 
 function getWeekdayTa(date: Date): string {
   return WEEKDAYS_TA[date.getDay()];
-}
-
-function getHolidaysForMonth(year: number, month: number): Holiday[] {
-  // Mock holidays
-  const holidays: Holiday[] = [];
-  const days = [1, 15, 26];
-  const names = ['தொழிலாளர் தினம்', 'சுதந்திர தினம்', 'குடியரசு தினம்'];
-  days.forEach((day, i) => {
-    if (day <= new Date(year, month + 1, 0).getDate()) {
-      holidays.push({
-        isoDate: `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
-        ta: names[i],
-        en: names[i],
-        kind: i === 0 ? 'national' : i === 1 ? 'tamilnadu' : 'optional'
-      });
-    }
-  });
-  return holidays;
 }
 
 // ============ Sub-Components ============
@@ -182,12 +159,14 @@ function HolidayList({ items }: { items: Holiday[] }) {
   const getTagColor = (kind: string) => {
     if (kind === 'national') return COLORS.warning;
     if (kind === 'tamilnadu') return COLORS.festival;
+    if (kind === 'international') return '#4FC3F7';
     return COLORS.saffron;
   };
-  
+
   const getTagLabel = (kind: string) => {
     if (kind === 'national') return 'NATL';
     if (kind === 'tamilnadu') return 'TN';
+    if (kind === 'international') return 'INTL';
     return 'OPT';
   };
 
@@ -237,6 +216,7 @@ export default function MaathaSirappuScreen({ navigation }: any) {
   const [cursor, setCursor] = useState(new Date(now.getFullYear(), now.getMonth(), 1));
   const [todayPanchang, setTodayPanchang] = useState<Panchang | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [pickerVisible, setPickerVisible] = useState(false);
 
   const year = cursor.getFullYear();
   const month = cursor.getMonth();
@@ -289,7 +269,7 @@ export default function MaathaSirappuScreen({ navigation }: any) {
   }, [year, month]);
 
   const tamilRange = getTamilMonthRange(year, month);
-  const monthHolidays = getHolidaysForMonth(year, month);
+  const monthHolidays = holidaysForMonth(year, month);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -306,6 +286,11 @@ export default function MaathaSirappuScreen({ navigation }: any) {
     const d = new Date(cursor);
     d.setMonth(d.getMonth() + 1);
     setCursor(d);
+  };
+
+  const handleSelectMonthYear = (selectedYear: number, selectedMonth: number) => {
+    setCursor(new Date(selectedYear, selectedMonth, 1));
+    setPickerVisible(false);
   };
 
   const handleDatePress = (date: Date) => {
@@ -389,14 +374,21 @@ export default function MaathaSirappuScreen({ navigation }: any) {
               <Ionicons name="chevron-back" size={24} color="#e2b714" />
             </StyledTouchable>
             
-            <StyledView className="items-center">
-              <StyledText className="text-gold text-xl font-serif font-bold">
-                {MONTHS_TA[month]} - {year}
-              </StyledText>
+            <StyledTouchable
+              className="items-center"
+              activeOpacity={0.7}
+              onPress={() => setPickerVisible(true)}
+            >
+              <StyledView className="flex-row items-center">
+                <StyledText className="text-gold text-xl font-serif font-bold">
+                  {MONTHS_TA[month]} - {year}
+                </StyledText>
+                <Ionicons name="chevron-down" size={16} color="#e2b714" style={{ marginLeft: 6 }} />
+              </StyledView>
               <StyledText className="text-light-text/30 text-xs font-sans">
                 {tamilRange}
               </StyledText>
-            </StyledView>
+            </StyledTouchable>
             
             <StyledTouchable
               className="bg-[#1A0E3A] w-10 h-10 rounded-xl items-center justify-center border border-gold/20"
@@ -544,6 +536,15 @@ export default function MaathaSirappuScreen({ navigation }: any) {
           </StyledText>
         </StyledView>
       </StyledScrollView>
+
+      <MonthYearPicker
+        visible={pickerVisible}
+        year={year}
+        month={month}
+        monthsTa={MONTHS_TA}
+        onSelect={handleSelectMonthYear}
+        onClose={() => setPickerVisible(false)}
+      />
     </StyledSafeArea>
   );
 }

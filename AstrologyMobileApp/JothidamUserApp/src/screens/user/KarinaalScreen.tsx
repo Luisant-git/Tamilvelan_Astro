@@ -12,6 +12,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useState, useMemo, useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import BackButton from '../../components/common/BackButton';
+import MonthYearPicker from '../../components/common/MonthYearPicker';
 
 const StyledView = styled(View);
 const StyledText = styled(Text);
@@ -197,6 +198,7 @@ export default function KarinaalScreen({ navigation }: any) {
   const [month, setMonth] = useState(now.getMonth());
   const [filter, setFilter] = useState<KarinaalCategory | 'all'>('all');
   const [refreshing, setRefreshing] = useState(false);
+  const [pickerVisible, setPickerVisible] = useState(false);
 
   // Generate days
   const allDays = useMemo(() => {
@@ -233,6 +235,12 @@ export default function KarinaalScreen({ navigation }: any) {
     navigation.navigate('panchang', { date });
   };
 
+  const handleSelectMonthYear = (selectedYear: number, selectedMonth: number) => {
+    setYear(selectedYear);
+    setMonth(selectedMonth);
+    setPickerVisible(false);
+  };
+
   return (
     <StyledSafeArea className="flex-1 bg-dark">
       <StatusBar style="light" />
@@ -243,6 +251,9 @@ export default function KarinaalScreen({ navigation }: any) {
         <StyledText className="text-gold text-xl font-serif flex-1">
           🌑 கரி நாட்கள்
         </StyledText>
+        <StyledTouchable onPress={() => setPickerVisible(true)}>
+          <Ionicons name="calendar-outline" size={24} color="#e2b714" />
+        </StyledTouchable>
       </StyledView>
 
       <StyledScrollView
@@ -394,6 +405,15 @@ export default function KarinaalScreen({ navigation }: any) {
           </StyledText>
         </StyledView>
       </StyledScrollView>
+
+      <MonthYearPicker
+        visible={pickerVisible}
+        year={year}
+        month={month}
+        monthsTa={MONTHS_TA}
+        onSelect={handleSelectMonthYear}
+        onClose={() => setPickerVisible(false)}
+      />
     </StyledSafeArea>
   );
 }

@@ -16,6 +16,7 @@ import DateTimePicker from '../../components/common/CrossPlatformDateTimePicker'
 import { panchangApi } from '../../services/panchang.api';
 import { useFetch } from '../../hooks';
 import BackButton from '../../components/common/BackButton';
+import { holidaysForMonth, type Holiday } from '../../utils/holidays';
 
 const StyledView = styled(View);
 const StyledText = styled(Text);
@@ -42,14 +43,6 @@ const COLORS = {
 const MONTHS_TA = ['ஜனவரி','பிப்ரவரி','மார்ச்','ஏப்ரல்','மே','ஜூன்','ஜூலை','ஆகஸ்ட்','செப்டம்பர்','அக்டோபர்','நவம்பர்','டிசம்பர்'];
 const TAMIL_WEEKDAYS = ['ஞாயிற்றுக்கிழமை', 'திங்கட்கிழமை', 'செவ்வாய்க்கிழமை', 'புதன்கிழமை', 'வியாழக்கிழமை', 'வெள்ளிக்கிழமை', 'சனிக்கிழமை'];
 
-// ============ Types ============
-interface Holiday {
-  isoDate: string;
-  ta: string;
-  en: string;
-  kind: 'national' | 'tamilnadu' | 'optional';
-}
-
 // ============ Helper Functions ============
 function toISO(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -62,24 +55,6 @@ function getTamilMonthName(date: Date): string {
 
 function getTamilDay(date: Date): number {
   return date.getDate();
-}
-
-function getHolidaysForMonth(year: number, month: number): Holiday[] {
-  // Mock holidays
-  const holidays: Holiday[] = [];
-  const days = [1, 15, 26];
-  const names = ['தொழிலாளர் தினம்', 'சுதந்திர தினம்', 'குடியரசு தினம்'];
-  days.forEach((day, i) => {
-    if (day <= new Date(year, month + 1, 0).getDate()) {
-      holidays.push({
-        isoDate: `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
-        ta: names[i],
-        en: names[i],
-        kind: i === 0 ? 'national' : i === 1 ? 'tamilnadu' : 'optional'
-      });
-    }
-  });
-  return holidays;
 }
 
 // ============ Components ============
@@ -160,12 +135,14 @@ function HolidayList({ items }: { items: Holiday[] }) {
   const getTagColor = (kind: string) => {
     if (kind === 'national') return COLORS.warning;
     if (kind === 'tamilnadu') return COLORS.festival;
+    if (kind === 'international') return '#4FC3F7';
     return COLORS.saffron;
   };
-  
+
   const getTagLabel = (kind: string) => {
     if (kind === 'national') return 'NATL';
     if (kind === 'tamilnadu') return 'TN';
+    if (kind === 'international') return 'INTL';
     return 'OPT';
   };
 
@@ -216,7 +193,7 @@ export default function PanchangScreen({ navigation, route }: any) {
   const tamilMonth = getTamilMonthName(date);
   const tamilDay = getTamilDay(date);
   const dow = date.getDay();
-  const monthHolidays = getHolidaysForMonth(date.getFullYear(), date.getMonth());
+  const monthHolidays = holidaysForMonth(date.getFullYear(), date.getMonth());
 
   const { data, loading, refreshing, error, refetch } = useFetch(
     () => panchangApi.fetchToday(toISO(date)),
@@ -272,20 +249,27 @@ export default function PanchangScreen({ navigation, route }: any) {
               <Ionicons name="chevron-back" size={24} color="#e2b714" />
             </StyledTouchable>
             
-            <StyledView className="items-center flex-1">
+            <StyledTouchable
+              className="items-center flex-1"
+              activeOpacity={0.7}
+              onPress={() => setShowDatePicker(true)}
+            >
               <StyledText className="text-light-text/50 text-xs font-sans">
                 {MONTHS_TA[date.getMonth()]} - {TAMIL_WEEKDAYS[dow].replace('கிழமை', '').trim()}
               </StyledText>
-              <StyledText className="text-gold text-2xl font-bold font-sans mt-1">
-                {String(date.getDate()).padStart(2, '0')}-{String(date.getMonth() + 1).padStart(2, '0')}-{date.getFullYear()}
-              </StyledText>
+              <StyledView className="flex-row items-center mt-1">
+                <StyledText className="text-gold text-2xl font-bold font-sans">
+                  {String(date.getDate()).padStart(2, '0')}-{String(date.getMonth() + 1).padStart(2, '0')}-{date.getFullYear()}
+                </StyledText>
+                <Ionicons name="chevron-down" size={14} color="#e2b714" style={{ marginLeft: 6 }} />
+              </StyledView>
               <StyledText className="text-light-text/30 text-[10px] font-sans mt-1">
                 {tamilMonth} மாதம் - வசந்த ருது - உத்தராயணம்
               </StyledText>
               <StyledText className="text-light-text/20 text-[10px] font-sans">
                 பராபவ - {tamilMonth} - {tamilDay}
               </StyledText>
-            </StyledView>
+            </StyledTouchable>
             
             <StyledTouchable
               className="bg-[#1A0E3A] w-10 h-10 rounded-xl items-center justify-center border border-gold/20"

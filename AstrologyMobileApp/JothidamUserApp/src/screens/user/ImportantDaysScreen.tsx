@@ -3,37 +3,48 @@ import {
   View,
   Text,
   ScrollView,
+  TouchableOpacity,
   RefreshControl
 } from 'react-native';
 import { styled } from '../../utils/styled';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
+import { Ionicons } from '@expo/vector-icons';
 import BackButton from '../../components/common/BackButton';
+import MonthYearPicker from '../../components/common/MonthYearPicker';
+import { holidaysForMonth, type Holiday } from '../../utils/holidays';
+import { findKarinaalDays, findGeneralMuhurthams, type KarinaalCategory, type KarinaalDay } from '../../utils/muhurtham';
 
 const StyledView = styled(View);
 const StyledText = styled(Text);
+const StyledTouchable = styled(TouchableOpacity);
 const StyledScrollView = styled(ScrollView);
 const StyledSafeArea = styled(SafeAreaView);
+
+const MONTHS_TA = ['ஜனவரி','பிப்ரவரி','மார்ச்','ஏப்ரல்','மே','ஜூன்','ஜூலை','ஆகஸ்ட்','செப்டம்பர்','அக்டோபர்','நவம்பர்','டிசம்பர்'];
+
+const HOLIDAY_TAG_COLOR: Record<string, string> = {
+  national: '#FF6B6B',
+  tamilnadu: '#4CAF50',
+  international: '#4FC3F7',
+  optional: '#FF8C00'
+};
+
+const HOLIDAY_TAG_LABEL: Record<string, string> = {
+  national: 'NATL',
+  tamilnadu: 'TN',
+  international: 'INTL',
+  optional: 'OPT'
+};
 
 // ============ Data ============
 type Row = { day: string; ta: string; meta?: string };
 
-const SUBA_MUHURTHAM: Row[] = [
-  { day: 'மே 8',  ta: 'சித்திரை 25 - வெள்ளி' },
-  { day: 'மே 13', ta: 'சித்திரை 30 - புதன்' },
-  { day: 'மே 14', ta: 'சித்திரை 31 - வியாழன்' },
-  { day: 'மே 18', ta: 'வைகாசி 4 - திங்கள்', meta: '✦' },
-  { day: 'மே 28', ta: 'வைகாசி 14 - வியாழன்', meta: '✦' },
-  { day: 'மே 29', ta: 'வைகாசி 15 - வெள்ளி', meta: '✦' }
-];
-
-const OTHER_DAYS: Row[] = [
-  { day: 'அஷ்டமி', ta: '9 சனி, 23 சனி' },
-  { day: 'நவமி',  ta: '10 ஞாயிறு, 24 ஞாயிறு' },
-  { day: 'தசமி',  ta: '11 திங்கள், 25 திங்கள்' },
-  { day: 'கரி நாட்கள்', ta: '21 வியாழன், 30 சனி, 31 ஞாயிறு' }
-];
+// Suba Muhurtham & Other Days (Ashtami/Navami/Chaturdasi) are computed per
+// month below (see computeSubaMuhurthamRows/computeOtherDaysRows) — they
+// used to be a frozen May-2026 snapshot, which never matched the selected
+// month. Same heuristic tithi math as the Muhurtham Finder / Karinaal screens.
 
 const HINDU_FESTIVALS: Row[] = [
   { day: '1',  ta: 'சித்ரா பௌர்ணமி, புத்த பூர்ணிமா, ஸ்ரீ கள்ளழகர் வைகை எழுந்தருளல்' },
@@ -57,11 +68,6 @@ const CHRISTIAN_FESTIVALS: Row[] = [
   { day: '31', ta: 'திருத்துவ ஞாயிறு' }
 ];
 
-const HOLIDAYS: Row[] = [
-  { day: '1',  ta: 'தொழிலாளர் தினம்' },
-  { day: '28', ta: 'பக்ரீத் பண்டிகை' }
-];
-
 const VIRATHA: Row[] = [
   { day: '●', ta: 'அமாவாசை',         meta: '16 சனி' },
   { day: '○', ta: 'பௌர்ணமி',         meta: '1 வெள்ளி, 31 ஞாயிறு' },
@@ -75,15 +81,55 @@ const VIRATHA: Row[] = [
   { day: '🪷', ta: 'சதுர்த்தி',        meta: '20 புதன்' }
 ];
 
-const SECTIONS = [
-  { title: 'சுபமுகூர்த்த தினங்கள்', rows: SUBA_MUHURTHAM },
-  { title: 'மற்ற தினங்கள்',         rows: OTHER_DAYS },
+// Government Holidays (real, month/year-aware — see holidaysForMonth) is
+// rendered separately below, in the same position this list used to hold it,
+// so the static reference sections keep their exact original order/spacing.
+const STATIC_SECTIONS_BEFORE_HOLIDAYS = [
   { title: 'இந்து பண்டிகைகள்',      rows: HINDU_FESTIVALS },
   { title: 'முஸ்லீம் பண்டிகைகள்',   rows: MUSLIM_FESTIVALS },
-  { title: 'கிறிஸ்த்துவ பண்டிகைகள்', rows: CHRISTIAN_FESTIVALS },
-  { title: 'அரசு விடுமுறை நாட்கள்', rows: HOLIDAYS },
+  { title: 'கிறிஸ்த்துவ பண்டிகைகள்', rows: CHRISTIAN_FESTIVALS }
+];
+
+const SECTIONS_AFTER_HOLIDAYS = [
   { title: 'விரத தினங்கள்',         rows: VIRATHA }
 ];
+
+function computeSubaMuhurthamRows(year: number, month: number): Row[] {
+  const start = new Date(year, month, 1);
+  const end = new Date(year, month + 1, 0);
+  const days = findGeneralMuhurthams({ startDate: start, endDate: end, limit: 6 });
+  return days.map(d => {
+    const dd = Number(d.isoDate.split('-')[2]);
+    return {
+      day: `${MONTHS_TA[month]} ${dd}`,
+      ta: `${d.tithiName} - ${d.weekdayTa}`,
+      meta: d.meta
+    };
+  });
+}
+
+const KARINAAL_ROW_LABEL: Record<KarinaalCategory, string> = {
+  ashtami: 'அஷ்டமி',
+  navami: 'நவமி',
+  chaturdasi: 'சதுர்தசி'
+};
+
+function computeOtherDaysRows(year: number, month: number): Row[] {
+  const start = new Date(year, month, 1);
+  const end = new Date(year, month + 1, 0);
+  const days = findKarinaalDays({ startDate: start, endDate: end });
+  const byCategory: Record<KarinaalCategory, KarinaalDay[]> = { ashtami: [], navami: [], chaturdasi: [] };
+  days.forEach(d => byCategory[d.category].push(d));
+  return (['ashtami', 'navami', 'chaturdasi'] as KarinaalCategory[]).map(cat => {
+    const list = byCategory[cat];
+    return {
+      day: KARINAAL_ROW_LABEL[cat],
+      ta: list.length
+        ? list.map(d => `${Number(d.isoDate.split('-')[2])} ${d.weekdayTa}`).join(', ')
+        : 'இல்லை'
+    };
+  });
+}
 
 // ============ Section Header Component ============
 function SectionHeader({ title }: { title: string }) {
@@ -135,25 +181,92 @@ function Section({ section }: { section: { title: string; rows: Row[] } }) {
   );
 }
 
+// ============ Government Holidays (real, month/year-aware) ============
+function HolidayList({ items }: { items: Holiday[] }) {
+  if (items.length === 0) {
+    return (
+      <StyledView className="p-4 items-center">
+        <StyledText className="text-light-text/40 text-sm font-sans">இல்லை</StyledText>
+      </StyledView>
+    );
+  }
+  return (
+    <StyledView>
+      {items.map((h, i) => {
+        const [, m, d] = h.isoDate.split('-').map(Number);
+        const tagColor = HOLIDAY_TAG_COLOR[h.kind];
+        return (
+          <StyledView
+            key={h.isoDate}
+            className={`flex-row items-center justify-between px-4 py-3 ${
+              i < items.length - 1 ? 'border-b border-gold/5' : ''
+            }`}
+          >
+            <StyledView className="min-w-[70px]">
+              <StyledText className="text-gold text-sm font-sans font-bold">
+                {MONTHS_TA[m - 1]} {String(d).padStart(2, '0')}
+              </StyledText>
+            </StyledView>
+            <StyledView className="flex-1 ml-2">
+              <StyledText className="text-light-text text-sm font-sans">{h.ta}</StyledText>
+              <StyledText className="text-light-text/30 text-[10px] font-sans">{h.en}</StyledText>
+            </StyledView>
+            <StyledView className="px-2 py-0.5 rounded-full border" style={{ borderColor: tagColor }}>
+              <StyledText style={{ color: tagColor }} className="text-[8px] font-bold font-sans">
+                {HOLIDAY_TAG_LABEL[h.kind]}
+              </StyledText>
+            </StyledView>
+          </StyledView>
+        );
+      })}
+    </StyledView>
+  );
+}
+
 // ============ Main Screen ============
 export default function ImportantDaysScreen({ navigation }: any) {
   const [refreshing, setRefreshing] = useState(false);
+  const [cursor, setCursor] = useState(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  });
+  const [pickerVisible, setPickerVisible] = useState(false);
+
+  const year = cursor.getFullYear();
+  const month = cursor.getMonth();
+
+  const monthHolidays = useMemo(() => holidaysForMonth(year, month), [year, month]);
+  const subaMuhurthamRows = useMemo(() => computeSubaMuhurthamRows(year, month), [year, month]);
+  const otherDaysRows = useMemo(() => computeOtherDaysRows(year, month), [year, month]);
+  const sectionsBeforeHolidays = useMemo(() => [
+    { title: 'சுபமுகூர்த்த தினங்கள்', rows: subaMuhurthamRows },
+    { title: 'மற்ற தினங்கள்', rows: otherDaysRows },
+    ...STATIC_SECTIONS_BEFORE_HOLIDAYS
+  ], [subaMuhurthamRows, otherDaysRows]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     setTimeout(() => setRefreshing(false), 1000);
   }, []);
 
+  const handleSelectMonthYear = (selectedYear: number, selectedMonth: number) => {
+    setCursor(new Date(selectedYear, selectedMonth, 1));
+    setPickerVisible(false);
+  };
+
   return (
     <StyledSafeArea className="flex-1 bg-dark">
       <StatusBar style="light" />
-      
+
       {/* Header */}
       <StyledView className="bg-dark-card px-4 py-4 shadow-lg flex-row items-center">
         <BackButton navigation={navigation} />
         <StyledText className="text-gold text-xl font-serif flex-1">
           📅 முக்கிய தினங்கள்
         </StyledText>
+        <StyledTouchable onPress={() => setPickerVisible(true)}>
+          <Ionicons name="calendar-outline" size={24} color="#e2b714" />
+        </StyledTouchable>
       </StyledView>
 
       <StyledScrollView
@@ -164,14 +277,31 @@ export default function ImportantDaysScreen({ navigation }: any) {
         showsVerticalScrollIndicator={false}
       >
         {/* Month Title */}
-        <StyledView className="items-center mb-3">
-          <StyledText className="text-light-text/60 text-sm font-sans">
-            மே 2026 — முக்கிய தினங்கள்
-          </StyledText>
+        <StyledTouchable
+          className="items-center mb-3"
+          activeOpacity={0.7}
+          onPress={() => setPickerVisible(true)}
+        >
+          <StyledView className="flex-row items-center">
+            <StyledText className="text-light-text/60 text-sm font-sans">
+              {MONTHS_TA[month]} {year} — முக்கிய தினங்கள்
+            </StyledText>
+            <Ionicons name="chevron-down" size={12} color="#8B7BAA" style={{ marginLeft: 4 }} />
+          </StyledView>
+        </StyledTouchable>
+
+        {/* Suba Muhurtham + Other Days (computed per month) + static reference sections */}
+        {sectionsBeforeHolidays.map((section, index) => (
+          <Section key={index} section={section} />
+        ))}
+
+        {/* Government Holidays — real, month/year-aware */}
+        <StyledView className="bg-dark-card rounded-2xl overflow-hidden border border-gold/10 mb-3">
+          <SectionHeader title={`அரசு விடுமுறை நாட்கள் — ${MONTHS_TA[month]} ${year}`} />
+          <HolidayList items={monthHolidays} />
         </StyledView>
 
-        {/* All Sections */}
-        {SECTIONS.map((section, index) => (
+        {SECTIONS_AFTER_HOLIDAYS.map((section, index) => (
           <Section key={index} section={section} />
         ))}
 
@@ -182,6 +312,15 @@ export default function ImportantDaysScreen({ navigation }: any) {
           </StyledText>
         </StyledView>
       </StyledScrollView>
+
+      <MonthYearPicker
+        visible={pickerVisible}
+        year={year}
+        month={month}
+        monthsTa={MONTHS_TA}
+        onSelect={handleSelectMonthYear}
+        onClose={() => setPickerVisible(false)}
+      />
     </StyledSafeArea>
   );
 }
