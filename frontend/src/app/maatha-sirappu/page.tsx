@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
 import api from '@/lib/api';
 import { toTamilDate, tamilMonthRangeForGregorian, TAMIL_WEEKDAYS_SHORT } from '@/lib/tamilCalendar';
 import { weekdayTaForIso, holidaysForMonth, type Holiday } from '@/lib/holidays';
+import MonthYearPicker from '@/components/MonthYearPicker';
 
 const MONTHS_TA = ['ஜனவரி','பிப்ரவரி','மார்ச்','ஏப்ரல்','மே','ஜூன்','ஜூலை','ஆகஸ்ட்','செப்டம்பர்','அக்டோபர்','நவம்பர்','டிசம்பர்'];
 
@@ -141,7 +142,10 @@ function HolidayList({ items }: { items: Holiday[] }) {
         const dd = String(d).padStart(2, '0');
         const mm = MONTHS_TA[m - 1];
         const wd = weekdayTaForIso(h.isoDate);
-        const tagColor = h.kind === 'national' ? COLOR.warning : h.kind === 'tamilnadu' ? COLOR.festival : COLOR.saffron;
+        const tagColor = h.kind === 'national' ? COLOR.warning
+          : h.kind === 'tamilnadu' ? COLOR.festival
+          : h.kind === 'international' ? '#4FC3F7'
+          : COLOR.saffron;
         return (
           <div key={h.isoDate} className="row-icon-content-aside" style={{
             padding: '10px 14px',
@@ -161,7 +165,7 @@ function HolidayList({ items }: { items: Holiday[] }) {
               border: `1px solid ${tagColor}`, padding: '2px 8px', borderRadius: '999px',
               fontFamily: 'system-ui, sans-serif', whiteSpace: 'nowrap'
             }}>
-              {h.kind === 'national' ? 'NATL' : h.kind === 'tamilnadu' ? 'TN' : 'OPT'}
+              {h.kind === 'national' ? 'NATL' : h.kind === 'tamilnadu' ? 'TN' : h.kind === 'international' ? 'INTL' : 'OPT'}
             </span>
           </div>
         );
@@ -174,6 +178,7 @@ export default function MonthCalendarPage() {
   const [cursor, setCursor] = useState<Date>(new Date());
   const [today] = useState<Date>(new Date());
   const [todayPanchang, setTodayPanchang] = useState<Panchang | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   useEffect(() => {
     api.get('/panchang/today', { params: { date: toISO(today) } })
@@ -213,6 +218,11 @@ export default function MonthCalendarPage() {
     setCursor(d);
   };
 
+  const handleSelectMonthYear = (selectedYear: number, selectedMonth: number) => {
+    setCursor(new Date(selectedYear, selectedMonth, 1));
+    setPickerOpen(false);
+  };
+
   const tamilRange = tamilMonthRangeForGregorian(year, month);
   const monthHolidays = holidaysForMonth(year, month);
 
@@ -233,14 +243,22 @@ export default function MonthCalendarPage() {
           <button onClick={() => shiftMonth(-1)} aria-label="previous" style={{ background: 'transparent', border: 'none', color: COLOR.gold, cursor: 'pointer' }}>
             <ChevronLeft size={32} />
           </button>
-          <div style={{ textAlign: 'center', flex: 1 }}>
-            <div style={{ fontSize: '20px', fontWeight: 600, fontFamily: 'Noto Sans Tamil, sans-serif', color: COLOR.gold }}>
+          <button
+            onClick={() => setPickerOpen(true)}
+            aria-label="select month and year"
+            style={{ textAlign: 'center', flex: 1, background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}
+          >
+            <div style={{
+              fontSize: '20px', fontWeight: 600, fontFamily: 'Noto Sans Tamil, sans-serif', color: COLOR.gold,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px'
+            }}>
               {MONTHS_TA[month]} - {year}
+              <ChevronDown size={16} />
             </div>
             <div style={{ fontSize: '15px', fontFamily: 'Noto Sans Tamil, sans-serif', color: COLOR.muted, marginTop: '2px' }}>
               {tamilRange}
             </div>
-          </div>
+          </button>
           <button onClick={() => shiftMonth(1)} aria-label="next" style={{ background: 'transparent', border: 'none', color: COLOR.gold, cursor: 'pointer' }}>
             <ChevronRight size={32} />
           </button>
@@ -387,6 +405,15 @@ export default function MonthCalendarPage() {
           <HolidayList items={monthHolidays} />
         </Card>
       </div>
+
+      <MonthYearPicker
+        open={pickerOpen}
+        year={year}
+        month={month}
+        monthsTa={MONTHS_TA}
+        onSelect={handleSelectMonthYear}
+        onClose={() => setPickerOpen(false)}
+      />
     </div>
   );
 }

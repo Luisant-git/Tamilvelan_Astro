@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
 import api from '@/lib/api';
 import { toTamilDate, TAMIL_WEEKDAYS } from '@/lib/tamilCalendar';
 import { holidaysForMonth, weekdayTaForIso, type Holiday } from '@/lib/holidays';
@@ -109,7 +109,10 @@ function HolidayList({ items }: { items: Holiday[] }) {
         const dd = String(d).padStart(2, '0');
         const mm = MONTHS_TA[m - 1];
         const wd = weekdayTaForIso(h.isoDate);
-        const tagColor = h.kind === 'national' ? COLOR.warning : h.kind === 'tamilnadu' ? COLOR.festival : COLOR.saffron;
+        const tagColor = h.kind === 'national' ? COLOR.warning
+          : h.kind === 'tamilnadu' ? COLOR.festival
+          : h.kind === 'international' ? '#4FC3F7'
+          : COLOR.saffron;
         return (
           <div key={h.isoDate} className="row-icon-content-aside" style={{
             padding: '10px 14px',
@@ -129,7 +132,7 @@ function HolidayList({ items }: { items: Holiday[] }) {
               border: `1px solid ${tagColor}`, padding: '2px 8px', borderRadius: '999px',
               fontFamily: 'system-ui, sans-serif', whiteSpace: 'nowrap'
             }}>
-              {h.kind === 'national' ? 'NATL' : h.kind === 'tamilnadu' ? 'TN' : 'OPT'}
+              {h.kind === 'national' ? 'NATL' : h.kind === 'tamilnadu' ? 'TN' : h.kind === 'international' ? 'INTL' : 'OPT'}
             </span>
           </div>
         );
@@ -150,6 +153,7 @@ export default function PanchangPage() {
   const initialDate = parseISODate(searchParams?.get('date') ?? null) ?? new Date();
   const [date, setDate] = useState<Date>(initialDate);
   const [data, setData] = useState<Panchang | null>(null);
+  const dateInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     api.get('/panchang/today', { params: { date: toISO(date) } })
@@ -177,12 +181,30 @@ export default function PanchangPage() {
             <button onClick={() => shift(-1)} aria-label="previous" style={{ background: 'transparent', border: 'none', color: COLOR.gold, cursor: 'pointer', padding: '4px' }}>
               <ChevronLeft size={28} />
             </button>
-            <div style={{ textAlign: 'center', flex: 1, color: COLOR.text }}>
+            <button
+              onClick={() => {
+                // showPicker() can throw (e.g. no user-activation in some
+                // automation/edge-case contexts) — `??` only covers a nullish
+                // return, not a thrown error, so a real try/catch is needed
+                // to still fall back to focus() in that case.
+                try {
+                  dateInputRef.current?.showPicker?.();
+                } catch {
+                  dateInputRef.current?.focus();
+                }
+              }}
+              aria-label="select date"
+              style={{ textAlign: 'center', flex: 1, color: COLOR.text, background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, position: 'relative' }}
+            >
               <div style={{ fontSize: '13px', fontFamily: 'Noto Sans Tamil, sans-serif', color: COLOR.muted }}>
                 {MONTHS_TA[date.getMonth()]} - {TAMIL_WEEKDAYS[dow].replace('கிழமை', '')}
               </div>
-              <div style={{ fontSize: '28px', fontWeight: 700, letterSpacing: '0.5px', fontFamily: 'system-ui, sans-serif', marginTop: '2px', color: COLOR.gold }}>
+              <div style={{
+                fontSize: '28px', fontWeight: 700, letterSpacing: '0.5px', fontFamily: 'system-ui, sans-serif', marginTop: '2px', color: COLOR.gold,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px'
+              }}>
                 {String(date.getDate()).padStart(2, '0')}-{String(date.getMonth() + 1).padStart(2, '0')}-{date.getFullYear()}
+                <ChevronDown size={16} />
               </div>
               <div style={{ fontSize: '12px', fontFamily: 'Noto Sans Tamil, sans-serif', color: COLOR.muted, marginTop: '6px' }}>
                 {tamil.monthName} மாதம் - வசந்த ருது - உத்தராயணம்
@@ -190,7 +212,19 @@ export default function PanchangPage() {
               <div style={{ fontSize: '12px', fontFamily: 'Noto Sans Tamil, sans-serif', color: COLOR.muted }}>
                 பராபவ - {tamil.monthName} - {tamil.day}
               </div>
-            </div>
+              <input
+                ref={dateInputRef}
+                type="date"
+                value={toISO(date)}
+                onChange={e => {
+                  const d = parseISODate(e.target.value);
+                  if (d) setDate(d);
+                }}
+                style={{ position: 'absolute', opacity: 0, width: 1, height: 1, pointerEvents: 'none' }}
+                tabIndex={-1}
+                aria-hidden="true"
+              />
+            </button>
             <button onClick={() => shift(1)} aria-label="next" style={{ background: 'transparent', border: 'none', color: COLOR.gold, cursor: 'pointer', padding: '4px' }}>
               <ChevronRight size={28} />
             </button>

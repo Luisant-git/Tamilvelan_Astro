@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
+import { Calendar } from 'lucide-react';
 import {
   findKarinaalDays,
   KARINAAL_LABELS,
@@ -9,6 +10,7 @@ import {
   type KarinaalDay
 } from '@/lib/muhurtham';
 import { toTamilDate, tamilMonthRangeForGregorian } from '@/lib/tamilCalendar';
+import MonthYearPicker from '@/components/MonthYearPicker';
 
 const MONTHS_TA = ['ஜனவரி','பிப்ரவரி','மார்ச்','ஏப்ரல்','மே','ஜூன்','ஜூலை','ஆகஸ்ட்','செப்டம்பர்','அக்டோபர்','நவம்பர்','டிசம்பர்'];
 const MONTHS_EN = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -135,6 +137,7 @@ export default function KarinaalPage() {
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth());
   const [filter, setFilter] = useState<KarinaalCategory | 'all'>('all');
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   const days = useMemo(() => {
     const start = new Date(year, month, 1);
@@ -159,6 +162,11 @@ export default function KarinaalPage() {
   const next = () => {
     if (month === 11) { setYear(year + 1); setMonth(0); }
     else setMonth(month + 1);
+  };
+  const handleSelectMonthYear = (selectedYear: number, selectedMonth: number) => {
+    setYear(selectedYear);
+    setMonth(selectedMonth);
+    setPickerOpen(false);
   };
 
   return (
@@ -185,14 +193,23 @@ export default function KarinaalPage() {
                 padding: '8px 14px', cursor: 'pointer', fontSize: '16px', fontWeight: 700
               }}
             >‹</button>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ color: COLOR.gold, fontFamily: 'Noto Serif Tamil, serif', fontSize: '18px', fontWeight: 700 }}>
+            <button
+              onClick={() => setPickerOpen(true)}
+              aria-label="select month and year"
+              style={{ textAlign: 'center', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}
+            >
+              <div style={{
+                color: COLOR.gold, fontFamily: 'Noto Serif Tamil, serif', fontSize: '18px', fontWeight: 700,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px'
+              }}>
+                <Calendar size={16} />
                 {MONTHS_TA[month]} {year}
+                <span style={{ fontSize: '12px' }}>▾</span>
               </div>
               <div style={{ color: COLOR.subtle, fontSize: '11px', fontFamily: 'Noto Sans Tamil, sans-serif' }}>
                 {tamilRange} · {MONTHS_EN[month]}
               </div>
-            </div>
+            </button>
             <button
               onClick={next}
               aria-label="Next month"
@@ -306,6 +323,15 @@ export default function KarinaalPage() {
           </span>
         </div>
       </div>
+
+      <MonthYearPicker
+        open={pickerOpen}
+        year={year}
+        month={month}
+        monthsTa={MONTHS_TA}
+        onSelect={handleSelectMonthYear}
+        onClose={() => setPickerOpen(false)}
+      />
     </div>
   );
 }
