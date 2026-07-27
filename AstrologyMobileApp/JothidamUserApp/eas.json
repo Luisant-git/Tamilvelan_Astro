@@ -16,6 +16,9 @@
       "distribution": "internal",
       "channel": "preview",
       "environment": "preview",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://tamilvelan-astro.onrender.com/api"
+      },
       "android": {
         "buildType": "apk"
       },
@@ -26,6 +29,9 @@
     "production": {
       "channel": "production",
       "environment": "production",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://tamilvelan-astro.onrender.com/api"
+      },
       "android": {
         "buildType": "apk",
         "distribution": "internal"
