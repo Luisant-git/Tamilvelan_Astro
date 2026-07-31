@@ -302,7 +302,7 @@ function RasiAccordion() {
     try {
       const result = await horoscopeApi.fetchDailyRasi(r.num);
       if (latestRequestRef.current !== r.num) return;
-      setPrediction(result.prediction);
+      setPrediction(result.preview);
     } catch (err) {
       if (latestRequestRef.current !== r.num) return;
       setPrediction(getErrorMessage(err));

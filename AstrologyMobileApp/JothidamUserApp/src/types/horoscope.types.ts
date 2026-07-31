@@ -97,6 +97,7 @@ export interface DailyRasiResponse {
   rasiName: string;
   date: string;
   prediction: string;
+  preview: string;
 }
 
 export interface HoroscopeHistoryItem {

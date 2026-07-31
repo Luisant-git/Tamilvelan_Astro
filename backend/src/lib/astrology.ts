@@ -469,9 +469,14 @@ function computeDosham(planets: Record<string, PlanetState>, lagnaRasi: number):
   const moonRasi = planets.Moon.rasi;
   const venusRasi = planets.Venus.rasi;
 
-  // Chevvai (Mangal) dosha: Mars in 1, 2, 4, 7, 8, 12 from lagna
-  const marsFromLagna = ((planets.Mars.rasi - lagnaRasi + 12) % 12) + 1;
-  const chevvaiPresent = [1, 2, 4, 7, 8, 12].includes(marsFromLagna);
+  // Chevvai (Mangal) dosha, classical three-fold check: Mars in 1, 2, 4, 7,
+  // 8, or 12 from Lagna, from Moon, or from Venus — dosha is considered
+  // present if the affliction shows from any of the three reference points
+  // (checking Lagna alone, as before, misses charts where the dosha only
+  // shows from Chandra/Kuja or Sukra/Kuja).
+  const houseOf = (baseRasi: number, targetRasi: number) => ((targetRasi - baseRasi + 12) % 12) + 1;
+  const marsAfflicts = (baseRasi: number) => [1, 2, 4, 7, 8, 12].includes(houseOf(baseRasi, planets.Mars.rasi));
+  const chevvaiPresent = marsAfflicts(lagnaRasi) || marsAfflicts(moonRasi) || marsAfflicts(venusRasi);
 
   // Sani dosha (simplified): Saturn in 2, 7, 8 from Moon
   const saturnFromMoon = ((planets.Saturn.rasi - moonRasi + 12) % 12) + 1;
@@ -940,12 +945,12 @@ export type MatchDosham = {
 export function computeMatchDoshams(brideChart: FullChart, groomChart: FullChart): MatchDosham[] {
   const out: MatchDosham[] = [];
 
-  // 1. செவ்வாய் தோஷம் (Mangal/Chevvai)
-  const mangalHouses = [1, 2, 4, 7, 8, 12];
-  const brideMangalFromLagna = ((brideChart.planets.Mars.rasi - brideChart.lagna.rasi + 12) % 12) + 1;
-  const groomMangalFromLagna = ((groomChart.planets.Mars.rasi - groomChart.lagna.rasi + 12) % 12) + 1;
-  const brideMangal = mangalHouses.includes(brideMangalFromLagna);
-  const groomMangal = mangalHouses.includes(groomMangalFromLagna);
+  // 1. செவ்வாய் தோஷம் (Mangal/Chevvai) — reuse the same three-fold
+  // (Lagna/Moon/Venus) result already computed on each chart via
+  // computeDosham(), so the individual-chart Dosha screen and the marriage
+  // match screen can never disagree about the same person's Chevvai dosha.
+  const brideMangal = brideChart.dosham.chevvaiDosha.present;
+  const groomMangal = groomChart.dosham.chevvaiDosha.present;
   if (brideMangal === groomMangal) {
     out.push({
       name: 'செவ்வாய் தோஷம்',
