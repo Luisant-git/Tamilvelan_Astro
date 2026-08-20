@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(pm2 list 2>&1)",
+      "PowerShell(pm2 logs jothidam-app --lines 60 --nostream 2>&1)",
+      "PowerShell(pm2 logs jothidam-app --lines 15 --nostream 2>&1)",
+      "Read(//c/Users/KARTHI/.pm2/logs/**)",
+      "PowerShell(Select-String -Path \"C:\\\\Users\\\\KARTHI\\\\.pm2\\\\logs\\\\jothidam-app-error.log\" -Pattern \"^0\\\\|jothidam \\\\| Error:|^0\\\\|jothidam \\\\| TypeError:|^0\\\\|jothidam \\\\| PrismaClient\" | ForEach-Object { $_.Line } | Group-Object | Select-Object Name, Count | Sort-Object Count -Descending | Select-Object -First 15)",
+      "PowerShell(Start-Process \"http://localhost:8081\")",
+      "PowerShell(pm2 logs jothidam-app --lines 50 --nostream --err 2>&1)",
+      "PowerShell(try { \\(Invoke-WebRequest -Uri \"http://localhost:8081\" -UseBasicParsing -TimeoutSec 3\\).StatusCode } catch { \"Metro down\" })",
+      "PowerShell(npx expo start --web)",
+      "PowerShell(Test-NetConnection -ComputerName localhost -Port 5432 -WarningAction SilentlyContinue)",
+      "PowerShell(Get-NetTCPConnection -LocalPort 3000 -ErrorAction SilentlyContinue | Select-Object -Property LocalPort,State,OwningProcess | ForEach-Object { $_; Get-Process -Id $_.OwningProcess -ErrorAction SilentlyContinue | Select-Object Id,ProcessName,Path })",
+      "PowerShell(Get-Process -Id 10524)",
+      "PowerShell(Get-NetTCPConnection -LocalPort 3000 -State Listen)",
+      "PowerShell(try { $r = Invoke-WebRequest -Uri \"http://192.168.1.100:3000/api/health\" -UseBasicParsing -TimeoutSec 5; \"$\\($r.StatusCode\\)\" } catch { $_.Exception.Message })",
+      "PowerShell(Get-NetTCPConnection -LocalPort 3000)",
+      "PowerShell(Get-NetTCPConnection -LocalPort 3000 -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-Process -Id 10524 -ErrorAction SilentlyContinue)",
+      "PowerShell(\"---\")",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "PowerShell(Get-Command npx)",
+      "PowerShell(npx playwright --version 2>&1)",
+      "PowerShell(npx playwright install chromium --with-deps 2>&1)"
+    ]
+  }
+}
