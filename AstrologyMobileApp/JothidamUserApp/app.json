@@ -1,0 +1,63 @@
+{
+  "expo": {
+    "name": "TamilVelan",
+    "slug": "AstrologyMobileApp",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/adaptive-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0D0620"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.jothidam.astrology",
+      "buildNumber": "1.0.0"
+    },
+    "android": {
+      "package": "com.jothidam.astrology",
+      "versionCode": 11,
+      "backgroundColor": "#0D0620",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#013A25"
+      },
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false
+    },
+    "androidStatusBar": {
+      "backgroundColor": "#0D0620",
+      "barStyle": "light-content"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "@react-native-community/datetimepicker",
+      "expo-font",
+      "expo-system-ui",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true,
+            "buildArchs": ["arm64-v8a"],
+            "enableMinifyInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true,
+            "enablePngCrunchInReleaseBuilds": true,
+            "extraProguardRules": "-keep,allowobfuscation @interface com.facebook.proguard.annotations.DoNotStrip\n-keep @com.facebook.proguard.annotations.DoNotStrip class *\n-keepclassmembers class * {\n    @com.facebook.proguard.annotations.DoNotStrip *;\n}\n-keep class com.facebook.react.bridge.** { *; }\n-keep class com.facebook.react.turbomodule.** { *; }\n-keep class com.facebook.react.fabric.** { *; }\n-keep class com.facebook.react.uimanager.** { *; }\n-keep class com.facebook.hermes.unicode.** { *; }\n-keep class com.facebook.jni.** { *; }\n-keep class com.swmansion.reanimated.** { *; }\n-keep class com.swmansion.worklets.** { *; }\n-keep class com.swmansion.gesturehandler.** { *; }\n-keep class com.swmansion.rnscreens.** { *; }\n-keep class com.th3rdwave.safeareacontext.** { *; }\n-keep class com.horcrux.svg.** { *; }\n-keepclassmembers class * extends com.facebook.react.bridge.NativeModule { *; }\n-dontwarn com.facebook.react.**"
+          }
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "34238536-a19b-4d8c-822f-05bbb37a5522"
+      }
+    },
+    "owner": "pavi_288"
+  }
+}
