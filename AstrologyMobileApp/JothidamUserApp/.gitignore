@@ -1,0 +1,45 @@
+# Expo
+node_modules/
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+dist-verify-temp/
+
+# Native (in case of expo prebuild / EAS local builds)
+android/
+ios/
+.kotlin/
+*.orig.*
+
+# Signing material — never commit these
+*.jks
+*.keystore
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.cer
+
+# Metro
+.metro-health-check*
+
+# Debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+.DS_Store
+*.pem
+
+# Local env files — EXPO_PUBLIC_* values get baked into the client bundle,
+# but keep the file out of version control anyway (it holds machine/network-
+# specific values like LAN IPs). Real secrets belong in EAS environment
+# variables, never in EXPO_PUBLIC_* vars or committed files.
+.env
+.env.local
+.env*.local
+
+# TypeScript
+*.tsbuildinfo
